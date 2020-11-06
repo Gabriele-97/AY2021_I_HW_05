@@ -11,16 +11,27 @@
 */
 #include "project.h"
 
+#define LIS3DH_DEVICE_ADDRESS 0x18
+
+#define LIS3DH_WHO_AM_I_REG_ADDR 0x0F
+
+#define LIS3DH_STATUS_REG 0x27
+
+#define LIS3DH_CTRL_REG1 0x20
+    
 #define STARTUP 0x0000
 
 int main(void)
 {
-    uint8 sampling_freq;
+    uint8 sampling_freq; //VALUTA SE FARE QUESTA DEF IN GLOBALE
     
-    CyGlobalIntEnable; /* Enable global interrupts. */
+    CyGlobalIntEnable; 
     EEPROM_Start();
-    sampling_freq = EEPROM_ReadByte(STARTUP);
-    /* Place your initialization/startup code here (e.g. MyInst_Start()) */
+    I2C_Start();
+    UART_Start();
+    EEPROM_UpdateTemperature();
+    sampling_freq = EEPROM_ReadByte(STARTUP); //SE DEVO RIFARE PIù VOLTE UPDATETEMP E READ METTO IN UNA FUNZ
+    
 
     for(;;)
     {
