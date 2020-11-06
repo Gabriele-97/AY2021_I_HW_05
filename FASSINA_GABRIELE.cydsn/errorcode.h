@@ -11,8 +11,8 @@
 */
 
 
-#ifndef __ERRORCODES_H
-    #define __ERRORCODES_H
+#ifndef __ERRORCODE_H
+    #define __ERRORCODE_H
     
     typedef enum {
         NO_ERROR,           ///< No error generated
