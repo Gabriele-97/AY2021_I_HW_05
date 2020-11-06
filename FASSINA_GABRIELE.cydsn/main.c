@@ -104,10 +104,58 @@ int main(void)
         }
     }
     
-
+    
+    /******************************************/
+    /*            I2C Writing REGISTER 1 for ODR */
+    /******************************************/
+        uint8_t ctrl_reg1_ODR;
+        ctrl_reg1_ODR = sampling_freq<<4;
+            
+        error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
+                                             LIS3DH_CTRL_REG1,
+                                             ctrl_reg1_ODR);
+    
+        if (error == NO_ERROR)
+        {
+            sprintf(message, "CONTROL REGISTER 1 successfully written as: 0x%02X\r\n", ctrl_reg1);
+            UART_PutString(message); 
+        }
+        else
+        {
+            UART_PutString("Error occurred during I2C comm to set control register 1\r\n");   
+        }
+    
+    
+    
     for(;;)
     {
-        /* Place your application code here. */
+        /* controllo che il pulsante sia premuto e incremento la sampling frequency come valore ODR 1-6)*/
+            if(PushButton_Read()){
+                sampling_freq++;
+                if (sampling_freq == 6) sampling_freq = 1;
+                while (PushButton_Read());
+            }        
+        
+    /******************************************/
+    /*   setting ODR                        */
+    /******************************************/
+        
+        uint8_t ctrl_reg1_ODR;
+        ctrl_reg1_ODR = sampling_freq<<4;
+            
+        error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
+                                             LIS3DH_CTRL_REG1,
+                                             ctrl_reg1_ODR);
+    
+        if (error == NO_ERROR)
+        {
+            sprintf(message, "CONTROL REGISTER 1 successfully written as: 0x%02X\r\n", ctrl_reg1);
+            UART_PutString(message); 
+        }
+        else
+        {
+            UART_PutString("Error occurred during I2C comm to set control register 1\r\n");   
+        }
     }
 }
 
