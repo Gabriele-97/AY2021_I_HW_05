@@ -20,6 +20,8 @@
 
 #define LIS3DH_CTRL_REG1 0x20
 
+#define LIS3DH_CTRL_REG4 0x23
+
 #define LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG1 0X07 //INACTIVE LPEN
 
 #define LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4 0x08 //ACTIVE HR
@@ -29,12 +31,18 @@
 
 int main(void)
 {
-    uint8 sampling_freq; //VALUTA SE FARE QUESTA DEF IN GLOBALE
-    char message[50] = {'\0'};
+    
 
     CyGlobalIntEnable; 
+    I2C_Peripheral_Start(); //CONTROLLA POI SE è GIUSTO
     EEPROM_Start();
     UART_Start();
+    
+    CyDelay(5);
+     
+    uint8 sampling_freq; //VALUTA SE FARE QUESTA DEF IN GLOBALE
+    char message[50];
+    
     EEPROM_UpdateTemperature();
     sampling_freq = EEPROM_ReadByte(STARTUP); //SE DEVO RIFARE PIù VOLTE UPDATETEMP E READ METTO IN UNA FUNZ
     
@@ -83,19 +91,19 @@ int main(void)
     /*            I2C Writing REGISTER 4      */
     /******************************************/
     
-    uint8_t ctrl_reg4;    
-    
+    uint8_t ctrl_reg4;
+        
     if (ctrl_reg4 != LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4 )
     {
         ctrl_reg4 = LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4;
             
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
-                                             LIS3DH_CTRL_REG1,
+                                             LIS3DH_CTRL_REG4,
                                              ctrl_reg4);
     
         if (error == NO_ERROR)
         {
-            sprintf(message, "CONTROL REGISTER 1 successfully written as: 0x%02X\r\n", ctrl_reg1);
+            sprintf(message, "CONTROL REGISTER 4 successfully written as: 0x%02X\r\n", ctrl_reg4);
             UART_PutString(message); 
         }
         else
@@ -106,7 +114,7 @@ int main(void)
     
     
     /******************************************/
-    /*            I2C Writing REGISTER 1 for ODR */
+    /*     I2C Writing REGISTER 1 for ODR    */
     /******************************************/
         uint8_t ctrl_reg1_ODR;
         ctrl_reg1_ODR = sampling_freq<<4;
@@ -117,7 +125,7 @@ int main(void)
     
         if (error == NO_ERROR)
         {
-            sprintf(message, "CONTROL REGISTER 1 successfully written as: 0x%02X\r\n", ctrl_reg1);
+            sprintf(message, "CONTROL REGISTER 1 successfully written as: 0x%02X\r\n", ctrl_reg1_ODR);
             UART_PutString(message); 
         }
         else
@@ -125,23 +133,27 @@ int main(void)
             UART_PutString("Error occurred during I2C comm to set control register 1\r\n");   
         }
     
-    
+    uint8_t flag_debug =1;
     
     for(;;)
     {
         /* controllo che il pulsante sia premuto e incremento la sampling frequency come valore ODR 1-6)*/
             if(PushButton_Read()){
-                sampling_freq++;
-                if (sampling_freq == 6) sampling_freq = 1;
                 while (PushButton_Read());
+                sampling_freq ++;
+                flag_debug =1;
+                if (sampling_freq > 6) sampling_freq = 1;
+                if (sampling_freq <1) sampling_freq =1;
+               
             }        
-        
+        EEPROM_WriteByte(sampling_freq,STARTUP); //metto la nuova frequenza nella EEprom
+            
     /******************************************/
     /*   setting ODR                        */
     /******************************************/
-        
-        uint8_t ctrl_reg1_ODR;
-        ctrl_reg1_ODR = sampling_freq<<4;
+        if (flag_debug){
+        flag_debug =0;    
+        uint8_t ctrl_reg1_ODR = sampling_freq<<4;
             
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG1,
@@ -149,14 +161,16 @@ int main(void)
     
         if (error == NO_ERROR)
         {
-            sprintf(message, "CONTROL REGISTER 1 successfully written as: 0x%02X\r\n", ctrl_reg1);
+            sprintf(message, "CONTROL REGISTER 1 successfully written as: 0x%02X\r\n", ctrl_reg1_ODR);
             UART_PutString(message); 
         }
         else
         {
             UART_PutString("Error occurred during I2C comm to set control register 1\r\n");   
         }
+        
     }
+}
 }
 
 /* [] END OF FILE */
