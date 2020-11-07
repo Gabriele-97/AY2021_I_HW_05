@@ -50,6 +50,10 @@ int main(void)
     uint8 flag_debug;
     uint8_t ctrl_reg1_ODR;
     
+    uint8_t OutArray[8];
+    OutArray[0] = 0xA0;
+    OutArray[7] = 0xC0;
+    
     EEPROM_UpdateTemperature();
     sampling_freq = EEPROM_ReadByte(STARTUP); //SE DEVO RIFARE PIù VOLTE UPDATETEMP E READ METTO IN UNA FUNZ
     
@@ -171,14 +175,22 @@ int main(void)
 
         }
         
-        // leggoi 3 valori dell'accelerometro
+        // leggo i 3 valori dell'accelerometro e li metto nel vettore che mi permette la comunicazione 
         uint8_t acc[6];
         error =  I2C_Peripheral_ReadRegisterMulti(LIS3DH_DEVICE_ADDRESS,
                                                 LIS3DH_XLOUT,
                                                 6,
                                                 acc);
+        //fai qui elaborazioni dati 
         
-                                                
+        OutArray[1] = acc[0];
+        OutArray[2] = acc[1];
+        OutArray[3] = acc[2];
+        OutArray[4] = acc[3];
+        OutArray[5] = acc[4];
+        OutArray[6] = acc[5];
+        
+        UART_PutArray(OutArray,8);
                                                
      
        
