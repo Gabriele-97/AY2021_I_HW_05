@@ -11,7 +11,7 @@
 */
 #include "project.h"
 #include "I2C_Interface.h"
-#include "personal.h"
+
 
 #define PUSH_BUTTON_PRESSED 0
 
@@ -29,6 +29,7 @@
 
 #define LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4 0x08 //ACTIVE HR
 
+#define LIS3DH_XLOUT 0x28 //register of output x
     
 #define STARTUP 0x00
 
@@ -142,12 +143,14 @@ int main(void)
     
     for(;;)
     {   
-        if (PushButton_Read() == 0){
-        while (PushButton_Read() == 0);
+        //read from button and update frequency
+        if (PushButton_Read() == PUSH_BUTTON_PRESSED){
+        while (PushButton_Read() == PUSH_BUTTON_PRESSED);
         sampling_freq ++;
                 if (sampling_freq > 6) sampling_freq = 1;
                 if (sampling_freq <1) sampling_freq =1;
         
+                EEPROM_WriteByte(sampling_freq,STARTUP); //metto la nuova frequenza nella EEprom 
                 ctrl_reg1_ODR = sampling_freq << 4;
         
                 
@@ -164,9 +167,19 @@ int main(void)
         {
             UART_PutString("Error occurred during I2C comm to set control register 1\r\n");   
         }
+        
+
         }
-        //EEPROM_WriteByte(sampling_freq,STARTUP); //metto la nuova frequenza nella EEprom 
-        /* controllo che il pulsante sia premuto e incremento la sampling frequency come valore ODR 1-6)*/
+        
+        // leggoi 3 valori dell'accelerometro
+        uint8_t acc[6];
+        error =  I2C_Peripheral_ReadRegisterMulti(LIS3DH_DEVICE_ADDRESS,
+                                                LIS3DH_XLOUT,
+                                                6,
+                                                acc);
+        
+                                                
+                                               
      
        
         
