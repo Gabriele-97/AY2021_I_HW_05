@@ -11,6 +11,9 @@
 */
 #include "project.h"
 #include "I2C_Interface.h"
+#include "personal.h"
+
+#define PUSH_BUTTON_PRESSED 0
 
 #define LIS3DH_DEVICE_ADDRESS 0x18
 
@@ -27,7 +30,7 @@
 #define LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4 0x08 //ACTIVE HR
 
     
-#define STARTUP 0x0000
+#define STARTUP 0x00
 
 int main(void)
 {
@@ -40,8 +43,11 @@ int main(void)
     
     CyDelay(5);
      
-    uint8 sampling_freq; //VALUTA SE FARE QUESTA DEF IN GLOBALE
+    uint8_t sampling_freq; //VALUTA SE FARE QUESTA DEF IN GLOBALE
     char message[50];
+    
+    uint8 flag_debug;
+    uint8_t ctrl_reg1_ODR;
     
     EEPROM_UpdateTemperature();
     sampling_freq = EEPROM_ReadByte(STARTUP); //SE DEVO RIFARE PIù VOLTE UPDATETEMP E READ METTO IN UNA FUNZ
@@ -116,8 +122,7 @@ int main(void)
     /******************************************/
     /*     I2C Writing REGISTER 1 for ODR    */
     /******************************************/
-        uint8_t ctrl_reg1_ODR;
-        ctrl_reg1_ODR = sampling_freq<<4;
+        ctrl_reg1_ODR = sampling_freq << 4;
             
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG1,
@@ -133,28 +138,19 @@ int main(void)
             UART_PutString("Error occurred during I2C comm to set control register 1\r\n");   
         }
     
-    uint8_t flag_debug =1;
+    
     
     for(;;)
-    {
-        /* controllo che il pulsante sia premuto e incremento la sampling frequency come valore ODR 1-6)*/
-            if(PushButton_Read()){
-                while (PushButton_Read());
-                sampling_freq ++;
-                flag_debug =1;
+    {   
+        if (PushButton_Read() == 0){
+        while (PushButton_Read() == 0);
+        sampling_freq ++;
                 if (sampling_freq > 6) sampling_freq = 1;
                 if (sampling_freq <1) sampling_freq =1;
-               
-            }        
-        EEPROM_WriteByte(sampling_freq,STARTUP); //metto la nuova frequenza nella EEprom
-            
-    /******************************************/
-    /*   setting ODR                        */
-    /******************************************/
-        if (flag_debug){
-        flag_debug =0;    
-        uint8_t ctrl_reg1_ODR = sampling_freq<<4;
-            
+        
+                ctrl_reg1_ODR = sampling_freq << 4;
+        
+                
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG1,
                                              ctrl_reg1_ODR);
@@ -168,9 +164,18 @@ int main(void)
         {
             UART_PutString("Error occurred during I2C comm to set control register 1\r\n");   
         }
+        }
+        //EEPROM_WriteByte(sampling_freq,STARTUP); //metto la nuova frequenza nella EEprom 
+        /* controllo che il pulsante sia premuto e incremento la sampling frequency come valore ODR 1-6)*/
+     
+       
         
+                    
+              
     }
+         
+    
 }
-}
+
 
 /* [] END OF FILE */
