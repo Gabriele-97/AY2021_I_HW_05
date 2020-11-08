@@ -34,6 +34,9 @@
 #define STARTUP 0x00
     
 #define STATUS_REG 0x27
+    
+#define M_CALIBRAZIONE 0.001
+#define Q_CALIBRAZIONE 2000
 
 int main(void)
 {
@@ -183,8 +186,11 @@ int main(void)
         CyDelay(10);
         uint8_t acc[6];
         int16_t outaccx;
+        int16_t outaccx_g;
         int16_t outaccy;
+        int16_t outaccy_g;
         int16_t outaccz;
+        int16_t outaccz_g;
         uint8_t sts_reg;
         uint8_t zda;
         uint8_t yda;
@@ -198,31 +204,32 @@ int main(void)
         if(xda){        
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x28, &acc[0]);
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x29, &acc[1]);
-        outaccx = (int16_t)((acc[0] | (acc[1]<<8)>>4));
+        outaccx = (int16_t)((acc[0] | (acc[1]<<8)))>>4;
+        outaccx_g = (M_CALIBRAZIONE * outaccx) - Q_CALIBRAZIONE;
         }
         
-        
-        //fai qui elaborazioni dati 
         if(yda){
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2A, &acc[2]);
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2B, &acc[3]);
-        outaccy = (int16_t)((acc[2] | (acc[3]<<8)>>4));
+        outaccy = (int16_t)((acc[2] | (acc[3]<<8)))>>4;
+        outaccy_g = (M_CALIBRAZIONE * outaccy) - Q_CALIBRAZIONE;
         }
         
         if(zda){
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2C, &acc[4]);
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2D, &acc[5]);
-        outaccz = (int16_t)((acc[4] | (acc[5]<<8)>>4));
+        outaccz = (int16_t)((acc[4] | (acc[5]<<8))) >>4; 
+        if(outaccz > 32767) outaccz = 32767; 
+        if(outaccz < -32767) outaccz = -32767; 
+        outaccz_g =( M_CALIBRAZIONE * outaccz) - Q_CALIBRAZIONE;
         }
         
-        OutArray[1] = acc[0];
-        OutArray[2] = acc[1];
+        outaccz_g = (int16) (outaccz_g * 1000);
+        
+        OutArray[1] = (int8_t) outaccz_g &0xFF;
+        OutArray [2] = (int8_t) outaccz_g >>8;
         
         UART_PutArray(OutArray,4);
-                                               
-     
-      
-        
                     
               
     }
