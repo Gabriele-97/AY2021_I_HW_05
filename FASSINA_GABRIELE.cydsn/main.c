@@ -35,8 +35,8 @@
     
 #define STATUS_REG 0x27
     
-#define M_CALIBRAZIONE 0.001
-#define Q_CALIBRAZIONE 2000
+#define M_CALIBRAZIONE 4/4096
+#define Q_CALIBRAZIONE 2
 
 int main(void)
 {
@@ -56,9 +56,9 @@ int main(void)
     uint8 flag_debug;
     uint8_t ctrl_reg1_ODR;
     
-    uint8_t OutArray[4];
+    uint8_t OutArray[8];
     OutArray[0] = 0xA0;
-    OutArray[3] = 0xC0;
+    OutArray[7] = 0xC0;
     
     EEPROM_UpdateTemperature();
     sampling_freq = EEPROM_ReadByte(STARTUP); //SE DEVO RIFARE PIù VOLTE UPDATETEMP E READ METTO IN UNA FUNZ
@@ -185,16 +185,23 @@ int main(void)
         // leggo i 3 valori dell'accelerometro e li metto nel vettore che mi permette la comunicazione 
         CyDelay(10);
         uint8_t acc[6];
-        int16_t outaccx;
-        int16_t outaccx_g;
-        int16_t outaccy;
-        int16_t outaccy_g;
-        int16_t outaccz;
-        int16_t outaccz_g;
-        uint8_t sts_reg;
+        int16 outaccx;
+        float outaccx_g;
+        float outaccx_ms;
+        int16 outaccx_tbt;
+        int16 outaccy;
+        float outaccy_g;
+        float outaccy_ms;
+        int16 outaccy_tbt;
+        int16 outaccz;
+        float outaccz_g;
+        float outaccz_ms;
+        int16 outaccz_tbt;
+        uint8 sts_reg;
         uint8_t zda;
         uint8_t yda;
         uint8_t xda;
+        
         
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, STATUS_REG, &sts_reg);
         zda = sts_reg & 0x04;
@@ -204,32 +211,45 @@ int main(void)
         if(xda){        
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x28, &acc[0]);
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x29, &acc[1]);
-        outaccx = (int16_t)((acc[0] | (acc[1]<<8)))>>4;
-        outaccx_g = (M_CALIBRAZIONE * outaccx) - Q_CALIBRAZIONE;
+        outaccx = (int16)((acc[0] | (acc[1]<<8)))>>4;
+        /*if(outaccx > 32767) outaccx = 32767; 
+        if(outaccx < -32767) outaccx = -32767; */
+        outaccx_g = 0.001 * outaccx  ;
+        outaccx_ms = outaccx_g * 9.81;
+        outaccx_tbt = (int16) outaccx_ms * 1000;
         }
         
         if(yda){
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2A, &acc[2]);
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2B, &acc[3]);
-        outaccy = (int16_t)((acc[2] | (acc[3]<<8)))>>4;
-        outaccy_g = (M_CALIBRAZIONE * outaccy) - Q_CALIBRAZIONE;
+        outaccy = (int16)((acc[2] | (acc[3]<<8)))>>4;
+        /*if(outaccy > 32767) outaccy = 32767; 
+        if(outaccy < -32767) outaccy = -32767; */
+        outaccy_g = 0.001 * outaccy;
+        outaccy_ms = outaccy_g * 9.81;
+        outaccy_tbt = (int16) outaccy_ms * 1000;
         }
         
         if(zda){
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2C, &acc[4]);
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, 0x2D, &acc[5]);
-        outaccz = (int16_t)((acc[4] | (acc[5]<<8))) >>4; 
-        if(outaccz > 32767) outaccz = 32767; 
-        if(outaccz < -32767) outaccz = -32767; 
-        outaccz_g =( M_CALIBRAZIONE * outaccz) - Q_CALIBRAZIONE;
+        outaccz = (int16)((acc[4] | (acc[5]<<8))) >>4; 
+        /*if(outaccz > 32767) outaccz = 32767; 
+        if(outaccz < -32767) outaccz = -32767; */
+        outaccz_g = 0.001 * outaccz;
+        outaccz_ms = outaccz_g * 9.81 ;
+        outaccz_tbt = (int16) outaccz_ms * 1000;
+        
         }
         
-        outaccz_g = (int16) (outaccz_g * 1000);
+        OutArray[1] = (uint8_t) outaccx_tbt >> 8;
+        OutArray[2] = (uint8_t) outaccx_tbt & 0xFF;
+        OutArray[3] = (uint8_t) outaccy_tbt >> 8;
+        OutArray[4] = (uint8_t) outaccy_tbt & 0xFF;
+        OutArray[5] = (uint8_t) outaccz_tbt >>8;
+        OutArray[6] = (uint8_t) outaccz_tbt &0xFF;
         
-        OutArray[1] = (int8_t) outaccz_g &0xFF;
-        OutArray [2] = (int8_t) outaccz_g >>8;
-        
-        UART_PutArray(OutArray,4);
+        UART_PutArray(OutArray,8);
                     
               
     }
