@@ -23,6 +23,10 @@
     #define LIS3DH_DEVICE_ADDRESS 0x18
     #define LIS3DH_CTRL_REG1 0x20
     
+    #define G 9.81
+    #define K 0.001
+    #define TRICK 1000;
+    
     void check_for_error(ErrorCode error, uint8_t register_value);
     void updatefreq();
     int16 read_and_convert(uint8_t da, uint8_t reg_low, uint8_t reg_high);

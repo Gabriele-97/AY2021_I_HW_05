@@ -14,76 +14,62 @@
 #include "Routines.h"
 
 
-#define PUSH_BUTTON_PRESSED 0
-
-#define LIS3DH_DEVICE_ADDRESS 0x18
-
 #define LIS3DH_WHO_AM_I_REG_ADDR 0x0F
-
 #define LIS3DH_STATUS_REG 0x27
-
-#define LIS3DH_CTRL_REG1 0x20
-
 #define LIS3DH_CTRL_REG4 0x23
-
 #define LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4 0x08 //ACTIVE HR
-
-#define LIS3DH_XLOUT 0x28 //register of output x
-    
-#define STARTUP 0x00
-    
-#define STATUS_REG 0x27
-    
-#define M_CALIBRAZIONE 4/4096
-#define Q_CALIBRAZIONE 2
+#define LIS3DH_XLOUT 0x28     
+#define STATUS_REG 0x27  
+#define HEADER 0xA0
+#define TAIL 0xC0
 
 int main(void)
 {
+    /* VARIABLE DEFINITION AND OUTARRAY BUFFER PREPARATION */
     
-
-    CyGlobalIntEnable; 
-    I2C_Peripheral_Start();//start I2C communication protocol
-    EEPROM_Start(); //start eeprom
-    UART_Start(); //start UART
-    
-    CyDelay(5); //wait for the starting procedures completed
-     
-      
     uint8_t ctrl_reg1_ODR;
     uint8_t ctrl_reg4;
-    
     uint8_t OutArray[8];
-    OutArray[0] = 0xA0;
-    OutArray[7] = 0xC0;
+    OutArray[0] = HEADER;
+    OutArray[7] = TAIL;
+    ErrorCode error;
     
-    //I read the value of the eeprom to set the ODR at the activation
-    EEPROM_UpdateTemperature();
+    /* START THE PERIPHERALS AND WAIT SOME MS FOR THEIR ACTIVATION*/
+    CyGlobalIntEnable; 
+    I2C_Peripheral_Start();
+    EEPROM_Start(); 
+    UART_Start(); 
+    CyDelay(5); 
+     
+    /* READ THE VALUE OF THE EEPROM 0X00 CELL TO DETERMINE INITIAL ODR*/ 
+    EEPROM_UpdateTemperature(); //according to datasheet before reading EEPROMM
     sampling_freq = EEPROM_ReadByte(STARTUP); 
     
     
-    /* Read WHO AM I REGISTER register */
-    uint8_t who_am_i_reg;
-    ErrorCode error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS,
-                                                  LIS3DH_WHO_AM_I_REG_ADDR, 
-                                                  &who_am_i_reg);
-    check_for_error(error, who_am_i_reg);
+    /* ==============================================================================                     
+                                    HIGH RESOLUTION MODE SETTING
     
-    //set HR mode   
+    According to design requirement, I have to set the resolution mode as high,
+    i.e. to have 12 bits values from the accelerometer. To do so, I have set the 
+    bit 3 of CONTROL REGISTER 1 (named LPEN) to 0 and bit 3 of CONTROL REGISTER 4
+    (named HR) to 1. CONTROL REGISTER 1 also contains the enable of the accelerometer
+    that is set to one in all directions. Besides, it also contains the ODR values
+    that are here set at the initial value according to the configuration read in 
+    the EEPROM memory
+    ================================================================================*/
       
         ctrl_reg4 = LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4;
-            
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG4,
                                              ctrl_reg4);
         check_for_error(error, ctrl_reg4);
     
+        
         ctrl_reg1_ODR = sampling_freq << 4;
         ctrl_reg1_ODR |= LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG1;
-            
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG1,
                                              ctrl_reg1_ODR);
-    
         check_for_error(error, ctrl_reg1_ODR);
     
     

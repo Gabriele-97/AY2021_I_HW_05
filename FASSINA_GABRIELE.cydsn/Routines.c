@@ -12,10 +12,10 @@
 
 #include "project.h"
 #include "Routines.h"
+char message[50];
 
 void check_for_error(ErrorCode error, uint8_t register_value){
     
-    char message[50];
     
     if (error == NO_ERROR)
     {
@@ -45,8 +45,26 @@ void updatefreq(){
         ErrorCode error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG1,
                                              ODR);
-    
-        check_for_error(error,ODR);
+        if (error == NO_ERROR){        
+        switch (sampling_freq){
+                    case 1: sprintf(message, " sampling frequency set at %d Hz", 1);
+                            break;
+                    case 2: sprintf(message, " sampling frequency set at %d Hz", 10);
+                            break;
+                    case 3: sprintf(message, " sampling frequency set at %d Hz", 25);
+                            break;
+                    case 4: sprintf(message, " sampling frequency set at %d Hz", 50);
+                            break;
+                    case 5: sprintf(message, " sampling frequency set at %d Hz", 100);
+                            break;
+                    case 6: sprintf(message, " sampling frequency set at %d Hz", 200);
+                            break;
+                    default:
+                        break;  
+                }    
+        UART_PutString(message);
+        }
+        else UART_PutString("Error occurred during I2C comm\r\n");   
 }
 }
 
@@ -61,9 +79,9 @@ int16 read_and_convert(uint8_t da, uint8_t reg_low, uint8_t reg_high){
         outacc = (int16)((acc[0] | (acc[1]<<8)))>>4;
         if(outacc > 2048) outacc = 2048; 
         if(outacc < -2048) outacc = -2048; 
-        outacc_conv = 0.001 * outacc  ;
-        outacc_conv = outacc_conv * 9.81;
-        outacc_tbt = (int16) outacc_conv * 1000;
+        outacc_conv = K * outacc  ;
+        outacc_conv = outacc_conv * G;
+        outacc_tbt = (int16) outacc_conv * TRICK;
         }
    return outacc_tbt;
 
