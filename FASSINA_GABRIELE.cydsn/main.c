@@ -29,6 +29,14 @@ int main(void)
     
     uint8_t ctrl_reg1_ODR;
     uint8_t ctrl_reg4;
+    int16 outaccx_tbt;
+    int16 outaccy_tbt;
+    int16 outaccz_tbt;
+    uint8_t sts_reg;
+    uint8_t zda;
+    uint8_t yda;
+    uint8_t xda;
+    uint8_t zyxda;
     uint8_t OutArray[8];
     OutArray[0] = HEADER;
     OutArray[7] = TAIL;
@@ -72,24 +80,23 @@ int main(void)
                                              ctrl_reg1_ODR);
         check_for_error(error, ctrl_reg1_ODR);
     
-    
+    /* =================================================================
+                                    INFINITE LOOP
+        
+        In the inifinite loop I control the status of the button to update 
+        the sampling frequency of the accelerometer according to the specific
+        value chosen by the user. Then the status register is read to check for
+        the readiness of the values in the three directions that are acquired 
+        and converted thanks to the proper "read and convert" function.
+        Only in case all three values have been correctly acquired, they are 
+        transmitted by UART protocol .
+        =====================================================================*/
+        
     for(;;)
     {   
-        updatefreq(); //FA L'UPDATE DELLA FREQUENZA MA VALUTA SE SI PUò RISCRIVERE MEGLIO A VIDEO
-        
-        
-        // leggo i 3 valori dell'accelerometro e li metto nel vettore che mi permette la comunicazione 
-        CyDelay(10);
-        
-        int16 outaccx_tbt;
-        int16 outaccy_tbt;
-        int16 outaccz_tbt;
-        uint8 sts_reg;
-        uint8_t zda;
-        uint8_t yda;
-        uint8_t xda;
-        uint8_t zyxda;
-        
+        //FAI UN INTERRPUT PER IL PULSANTE ??
+        updatefreq(); //this function updates the sampling frequency when the user presses a button
+           
         
         error = I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, STATUS_REG, &sts_reg);
         zda = sts_reg & 0x04;
