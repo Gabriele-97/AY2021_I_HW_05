@@ -79,9 +79,8 @@ int16 read_and_convert(uint8_t da, uint8_t reg_low, uint8_t reg_high){
         outacc = (int16)((acc[0] | (acc[1]<<8)))>>4;
         if(outacc > 2048) outacc = 2048; 
         if(outacc < -2048) outacc = -2048; 
-        outacc_conv = K * outacc  ;
-        outacc_conv = outacc_conv * G;
-        outacc_tbt = (int16) outacc_conv * TRICK;
+        outacc_conv = (float) (K * outacc * G);
+        outacc_tbt = (int16) (outacc_conv * 1000);
         }
    return outacc_tbt;
 

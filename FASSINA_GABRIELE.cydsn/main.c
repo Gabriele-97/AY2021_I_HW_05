@@ -44,13 +44,13 @@ int main(void)
     
     /* START THE PERIPHERALS AND WAIT SOME MS FOR THEIR ACTIVATION*/
     CyGlobalIntEnable; 
+    UART_Start(); 
     I2C_Peripheral_Start();
     EEPROM_Start(); 
-    UART_Start(); 
     CyDelay(5); 
      
     /* READ THE VALUE OF THE EEPROM 0X00 CELL TO DETERMINE INITIAL ODR*/ 
-    EEPROM_UpdateTemperature(); //according to datasheet before reading EEPROMM
+    //EEPROM_UpdateTemperature(); //according to datasheet before reading EEPROMM
     sampling_freq = EEPROM_ReadByte(STARTUP); 
     
     
@@ -65,7 +65,8 @@ int main(void)
     that are here set at the initial value according to the configuration read in 
     the EEPROM memory
     ================================================================================*/
-      
+        
+    
         ctrl_reg4 = LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4;
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG4,
@@ -73,8 +74,7 @@ int main(void)
         check_for_error(error, ctrl_reg4);
     
         
-        ctrl_reg1_ODR = sampling_freq << 4;
-        ctrl_reg1_ODR += LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG1; //CAMBIATO
+        ctrl_reg1_ODR = (sampling_freq << 4) | LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG1;
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG1,
                                              ctrl_reg1_ODR);
@@ -110,13 +110,12 @@ int main(void)
         outaccz_tbt = read_and_convert(zda, 0x2C, 0x2D);
                
         
-        
         OutArray[1] =  (uint8_t) (outaccx_tbt & 0xFF);
-        OutArray[2] =  (uint8_t) (outaccx_tbt >> 8);
+        OutArray[2] =  (uint8_t) ((outaccx_tbt >> 8)&0xFF);
         OutArray[3] =  (uint8_t) (outaccy_tbt & 0xFF);
-        OutArray[4] =  (uint8_t) (outaccy_tbt >>8);
-        OutArray[5] =  (uint8_t) (outaccz_tbt &0xFF);
-        OutArray[6] =  (uint8_t) (outaccz_tbt >>8);
+        OutArray[4] =  (uint8_t) ((outaccy_tbt >> 8)&0xFF);
+        OutArray[5] =  (uint8_t) (outaccz_tbt & 0xFF);
+        OutArray[6] =  (uint8_t) ((outaccz_tbt >> 8)&0xFF);
         
         UART_PutArray(OutArray,8);
         }            
