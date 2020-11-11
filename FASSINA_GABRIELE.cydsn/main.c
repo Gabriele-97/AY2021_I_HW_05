@@ -74,7 +74,7 @@ int main(void)
     
         
         ctrl_reg1_ODR = sampling_freq << 4;
-        ctrl_reg1_ODR |= LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG1;
+        ctrl_reg1_ODR += LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG1; //CAMBIATO
         error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
                                              LIS3DH_CTRL_REG1,
                                              ctrl_reg1_ODR);
@@ -104,19 +104,19 @@ int main(void)
         xda = sts_reg & 0x01;
         zyxda = sts_reg & 0x08;
         
-       
+        if(zyxda){
         outaccx_tbt = read_and_convert(xda, 0x28, 0x29);
         outaccy_tbt = read_and_convert(yda, 0x2A, 0x2B);
         outaccz_tbt = read_and_convert(zda, 0x2C, 0x2D);
                
         
-        if(zyxda){
-        OutArray[1] =  outaccx_tbt >> 8;
-        OutArray[2] =  outaccx_tbt & 0xFF;
-        OutArray[3] =  outaccy_tbt >> 8;
-        OutArray[4] =  outaccy_tbt & 0xFF;
-        OutArray[5] =  outaccz_tbt >>8;
-        OutArray[6] =  outaccz_tbt &0xFF;
+        
+        OutArray[1] =  (uint8_t) (outaccx_tbt & 0xFF);
+        OutArray[2] =  (uint8_t) (outaccx_tbt >> 8);
+        OutArray[3] =  (uint8_t) (outaccy_tbt & 0xFF);
+        OutArray[4] =  (uint8_t) (outaccy_tbt >>8);
+        OutArray[5] =  (uint8_t) (outaccz_tbt &0xFF);
+        OutArray[6] =  (uint8_t) (outaccz_tbt >>8);
         
         UART_PutArray(OutArray,8);
         }            

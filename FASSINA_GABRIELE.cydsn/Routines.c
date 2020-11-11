@@ -35,8 +35,8 @@ void updatefreq(){
         if (PushButton_Read() == PUSH_BUTTON_PRESSED){
         while (PushButton_Read() == PUSH_BUTTON_PRESSED);
         sampling_freq ++;
-                if (sampling_freq > 6) sampling_freq = 1;
-                if (sampling_freq <1) sampling_freq =1;
+                if (sampling_freq > 0x06) sampling_freq = 0x01;
+                if (sampling_freq <0x01) sampling_freq =0x01;
         
                 EEPROM_WriteByte(sampling_freq,STARTUP); //metto la nuova frequenza nella EEprom 
                 ODR = sampling_freq << 4 ;
