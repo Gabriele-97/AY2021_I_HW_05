@@ -68,22 +68,49 @@ void updatefreq(){
 }
 }
 
-int16 read_and_convert(uint8_t da, uint8_t reg_low, uint8_t reg_high){
+int16 read_and_convert( uint8_t reg_low, uint8_t reg_high){
     uint8_t acc[2];
     int16 outacc;
     float outacc_conv;
     int16 outacc_tbt;
-    if(da){        
-        I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, reg_low, &acc[0]);
-        I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, reg_high, &acc[1]);
-        outacc = (int16)((acc[0] | (acc[1]<<8)))>>4;
-        if(outacc > 2048) outacc = 2048; 
-        if(outacc < -2048) outacc = -2048; 
-        outacc_conv = (float) (K * outacc * G);
-        outacc_tbt = (int16) (outacc_conv * 1000);
-        }
+           
+    I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, reg_low, &acc[0]);
+    I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, reg_high, &acc[1]);
+    outacc = (int16)((acc[0] | (acc[1]<<8)))>>4;
+    if(outacc > 2048) outacc = 2048; 
+    if(outacc < -2048) outacc = -2048; 
+    outacc_conv = (float) (K * outacc * G);
+    outacc_tbt = (int16) (TRICK * outacc_conv);
+    
    return outacc_tbt;
 
+}
+
+void transmit(int16 accx, int16 accy, int16 accz){
+        OutArray[1] =  (uint8_t) (accx & 0xFF);
+        OutArray[2] =  (uint8_t) ((accx >> 8)&0xFF);
+        OutArray[3] =  (uint8_t) (accy & 0xFF);
+        OutArray[4] =  (uint8_t) ((accy >> 8)&0xFF);
+        OutArray[5] =  (uint8_t) (accz & 0xFF);
+        OutArray[6] =  (uint8_t) ((accz >> 8)&0xFF);
+        
+        UART_PutArray(OutArray,BYTE_TO_TRANSMIT);
+}
+
+void high_resolution_set(){
+    ctrl_reg4 = LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG4;
+        error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
+                                             LIS3DH_CTRL_REG4,
+                                             ctrl_reg4);
+        check_for_error(error, ctrl_reg4);
+    
+        
+        ctrl_reg1_ODR = (sampling_freq << 4) | LIS3DH_HIGH_RESOLUTION_MODE_CTRL_REG1;
+        error = I2C_Peripheral_WriteRegister(LIS3DH_DEVICE_ADDRESS,
+                                             LIS3DH_CTRL_REG1,
+                                             ctrl_reg1_ODR);
+        check_for_error(error, ctrl_reg1_ODR);
+    
 }
 
 /* [] END OF FILE */
