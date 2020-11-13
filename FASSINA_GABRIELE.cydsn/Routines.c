@@ -1,11 +1,11 @@
 /* ========================================
  *
- * Copyright YOUR COMPANY, THE YEAR
+ * Copyright LTEBS, 2020
  * All Rights Reserved
  * UNPUBLISHED, LICENSED SOFTWARE.
  *
  * CONFIDENTIAL AND PROPRIETARY INFORMATION
- * WHICH IS THE PROPERTY OF your company.
+ * WHICH IS THE PROPERTY OF Gabriele Fassina.
  *
  * ========================================
 */
@@ -35,8 +35,8 @@ void updatefreq(){
         if (PushButton_Read() == PUSH_BUTTON_PRESSED){
         while (PushButton_Read() == PUSH_BUTTON_PRESSED);
         sampling_freq ++;
-                if (sampling_freq > 0x06) sampling_freq = 0x01;
-                if (sampling_freq <0x01) sampling_freq =0x01;
+                if (sampling_freq > MAX_FREQUENCY) sampling_freq = MIN_FREQUENCY;
+                if (sampling_freq <MIN_FREQUENCY) sampling_freq =MIN_FREQUENCY;
         
                 EEPROM_WriteByte(sampling_freq,STARTUP); //metto la nuova frequenza nella EEprom 
                 ODR = sampling_freq << 4 ;
@@ -47,17 +47,17 @@ void updatefreq(){
                                              ODR);
         if (error == NO_ERROR){        
         switch (sampling_freq){
-                    case 1: sprintf(message, " sampling frequency set at %d Hz", 1);
+                    case 0x01: sprintf(message, " sampling frequency set at %d Hz", 1);
                             break;
-                    case 2: sprintf(message, " sampling frequency set at %d Hz", 10);
+                    case 0x02: sprintf(message, " sampling frequency set at %d Hz", 10);
                             break;
-                    case 3: sprintf(message, " sampling frequency set at %d Hz", 25);
+                    case 0x03: sprintf(message, " sampling frequency set at %d Hz", 25);
                             break;
-                    case 4: sprintf(message, " sampling frequency set at %d Hz", 50);
+                    case 0x04: sprintf(message, " sampling frequency set at %d Hz", 50);
                             break;
-                    case 5: sprintf(message, " sampling frequency set at %d Hz", 100);
+                    case 0x05: sprintf(message, " sampling frequency set at %d Hz", 100);
                             break;
-                    case 6: sprintf(message, " sampling frequency set at %d Hz", 200);
+                    case 0x06: sprintf(message, " sampling frequency set at %d Hz", 200);
                             break;
                     default:
                         break;  
@@ -77,8 +77,8 @@ int16 read_and_convert( uint8_t reg_low, uint8_t reg_high){
     I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, reg_low, &acc[0]);
     I2C_Peripheral_ReadRegister(LIS3DH_DEVICE_ADDRESS, reg_high, &acc[1]);
     outacc = (int16)((acc[0] | (acc[1]<<8)))>>4;
-    if(outacc > 2048) outacc = 2048; 
-    if(outacc < -2048) outacc = -2048; 
+    if(outacc > MAX_DIGIT) outacc = MAX_DIGIT; 
+    if(outacc < MIN_DIGIT) outacc = MIN_DIGIT; 
     outacc_conv = (float) (K * outacc * G);
     outacc_tbt = (int16) (TRICK * outacc_conv);
     
